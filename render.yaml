@@ -3,7 +3,7 @@
 # stvarnom Render nalogu; vidi DEPLOYMENT.md.
 services:
   - type: web
-    name: crm
+    name: crm-test
     runtime: node
     region: frankfurt
     plan: starter
@@ -19,27 +19,25 @@ services:
         value: production
       - key: APP_URL
         fromService:
-          name: crm
+          name: crm-test
           type: web
           envVarKey: RENDER_EXTERNAL_URL
       - key: DATABASE_URL
         fromDatabase:
-          name: crm-db
+          name: crm-test-db
           property: connectionString
       - key: BETTER_AUTH_SECRET
         generateValue: true
-      # Svaki: 64 heksadecimalna znaka (openssl rand -hex 32). Unose se ručno.
+      # Ključevi za JMBG. Posle prve objave se NE SMEJU menjati: sa drugim
+      # ključem se već upisani JMBG-ovi više ne mogu pročitati.
       - key: JMBG_ENCRYPTION_KEY
-        sync: false
+        generateValue: true
       - key: JMBG_INDEX_KEY
-        sync: false
-      - key: SMTP_URL
-        sync: false
-      - key: MAIL_FROM
-        sync: false
+        generateValue: true
+      # SMTP_URL i MAIL_FROM se dodaju kasnije u Environment (vidi docs/RENDER.md).
 
 databases:
-  - name: crm-db
+  - name: crm-test-db
     region: frankfurt
     postgresMajorVersion: "16"
     plan: basic-256mb

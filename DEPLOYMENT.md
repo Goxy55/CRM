@@ -17,7 +17,7 @@ Aplikacija nije objavljena ni na jednom produkcionom domenu.
 | `DATABASE_SSL` | po potrebi | `true` za TLS vezu sa bazom |
 | `APP_URL` | da | javna HTTPS adresa, bez putanje |
 | `BETTER_AUTH_SECRET` | da | `openssl rand -hex 32` |
-| `JMBG_ENCRYPTION_KEY`, `JMBG_INDEX_KEY` | da | svaki `openssl rand -hex 32`; čuvati odvojeno od baze |
+| `JMBG_ENCRYPTION_KEY`, `JMBG_INDEX_KEY` | da | svaki `openssl rand -hex 32` ili druga nasumična vrednost od 32+ znaka; čuvati odvojeno od baze; ne menjati posle prvog unosa JMBG-a |
 | `SMTP_URL`, `MAIL_FROM` | preporučeno | bez njih reset lozinke ne radi |
 
 ## Koraci (bilo koji Node.js hosting)
@@ -50,7 +50,7 @@ Migracije pokrećite pri svakoj novoj verziji, pre starta. Demo podatke (`seed:d
 
 ## Render
 
-`render.yaml` opisuje web servis i bazu u Frankfurtu. Resursi se plaćaju i kreiraju se tek kada ih vlasnik potvrdi u svom Render nalogu; cene proverite na njihovom cenovniku. `JMBG_ENCRYPTION_KEY`, `JMBG_INDEX_KEY`, `SMTP_URL` i `MAIL_FROM` unose se ručno. Za sopstveni domen zamenite `APP_URL` stvarnom adresom. **Ova konfiguracija nije isprobana na stvarnom Render nalogu.**
+Koraci za probnu objavu su u [docs/RENDER.md](docs/RENDER.md). **Konfiguracija nije isprobana na stvarnom Render nalogu.**
 
 ## Sopstveni server (Docker)
 

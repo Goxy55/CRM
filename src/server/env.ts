@@ -1,4 +1,4 @@
-import { randomBytes } from "node:crypto";
+import { createHash, randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 
 /**
@@ -32,10 +32,15 @@ function devSecrets(): Record<string, string> {
   return secrets;
 }
 
+/**
+ * Ključ od 32 bajta. Prihvata 64 heksadecimalna znaka (openssl rand -hex 32)
+ * ili bilo koju nasumičnu vrednost od najmanje 32 znaka, kakvu generišu
+ * hosting platforme; iz nje se ključ izvodi heširanjem (SHA-256).
+ */
 function key(name: string, value: string | undefined): Buffer {
-  if (!value || !/^[0-9a-fA-F]{64}$/.test(value))
-    throw new Error(`${name} mora biti 64 heksadecimalna znaka (openssl rand -hex 32).`);
-  return Buffer.from(value, "hex");
+  if (value && /^[0-9a-fA-F]{64}$/.test(value)) return Buffer.from(value, "hex");
+  if (value && value.length >= 32) return createHash("sha256").update(`${name}:${value}`).digest();
+  throw new Error(`${name} mora imati najmanje 32 nasumična znaka (npr. openssl rand -hex 32).`);
 }
 
 export function env(): Env {
