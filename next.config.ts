@@ -16,10 +16,11 @@ const securityHeaders = [
 ];
 
 const config: NextConfig = {
-  output: "standalone",
   poweredByHeader: false,
   // Biblioteke sa sopstvenim fajlovima (fontovi, nativni moduli) ostaju van bundle-a.
   serverExternalPackages: ["pg", "pdfkit", "exceljs", "nodemailer"],
+  // Uvoz šalje redove datoteke kroz server akciju (do 5 MB izvorne datoteke).
+  experimental: { serverActions: { bodySizeLimit: "12mb" } },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
