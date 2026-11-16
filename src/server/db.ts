@@ -1,5 +1,4 @@
 import { Pool, types, type PoolClient } from "pg";
-import { env } from "./env";
 
 // DATE ostaje tekst "YYYY-MM-DD"; pretvaranje u Date bi pomeralo dan po vremenskoj zoni.
 types.setTypeParser(1082, (v) => v);
@@ -8,10 +7,13 @@ const store = globalThis as { __crmPool?: Pool; __crmRlsCheck?: Promise<void> };
 
 export function pool(): Pool {
   if (!store.__crmPool) {
-    const e = env();
+    // Samo podešavanja baze: migracije i skripte ne zahtevaju ostatak konfiguracije
+    // (adresu aplikacije, tajne), koji pri objavi ne mora još biti dostupan.
+    const { DATABASE_URL, DATABASE_SSL } = process.env;
+    if (!DATABASE_URL) throw new Error("DATABASE_URL nije podešen.");
     store.__crmPool = new Pool({
-      connectionString: e.databaseUrl,
-      ssl: e.databaseSsl ? { rejectUnauthorized: true } : undefined,
+      connectionString: DATABASE_URL,
+      ssl: DATABASE_SSL === "true" ? { rejectUnauthorized: true } : undefined,
       max: Number(process.env.DB_POOL_MAX || 10),
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,

@@ -48,7 +48,8 @@ export function env(): Env {
   const e = process.env;
   const production = e.NODE_ENV === "production";
   if (!e.DATABASE_URL) throw new Error("DATABASE_URL nije podešen.");
-  const appUrl = e.APP_URL || (production ? "" : "http://localhost:3000");
+  // Render sam postavlja RENDER_EXTERNAL_URL; koristi se kada APP_URL nije zadat.
+  const appUrl = e.APP_URL || e.RENDER_EXTERNAL_URL || (production ? "" : "http://localhost:3000");
   if (!appUrl) throw new Error("APP_URL je obavezan u produkciji.");
   const url = new URL(appUrl);
   if (url.origin !== appUrl)
