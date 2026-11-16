@@ -15,7 +15,7 @@ Daje jedan HTTPS link na kojem testeri koriste CRM. Render nalog treba samo vlas
 5. Napravite administratora platforme. U web servisu otvorite **Shell** i unesite (sa svojim podacima; lozinka najmanje 12 znakova):
 
    ```bash
-   ADMIN_EMAIL=gora.milinkovic@gmail.com ADMIN_PASSWORD='Nektarija310724' ADMIN_FIRST_NAME=Goran ADMIN_LAST_NAME=Milinkovic npm run platform-admin
+   ADMIN_EMAIL=goran.milinkovic@gmail.com ADMIN_PASSWORD='Nektarija310724' ADMIN_FIRST_NAME=Goran ADMIN_LAST_NAME=Milinkovic npm run platform-admin
    ```
 
 6. Prijavite se na dodeljenoj adresi. Na strani **Platforma** kreirajte organizaciju i unesite podatke njenog administratora.
