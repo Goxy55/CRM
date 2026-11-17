@@ -299,6 +299,55 @@ async function main() {
     await viewerContext.close();
     ok("korisnik sa dozvolom samo za pregled ne može da unosi, menja, izvozi ni administrira");
 
+    // --- Samostalna prijava preko linka, uz odobrenje administratora
+    await page.goto(`${BASE}/administracija`);
+    await page.getByRole("button", { name: "Uključi link za prijavu" }).click();
+    const signupLink = (await page.locator("p.font-mono", { hasText: "/registracija/" }).textContent())!.trim();
+    const testerContext = await browser.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+    const tester = await testerContext.newPage();
+    await tester.goto(signupLink);
+    await tester.getByText("E2E Alfa").waitFor();
+    assert.ok(await noHorizontalScroll(tester), "vodoravni skrol na prijavi");
+    await tester.getByLabel("Ime", { exact: true }).fill("Tea");
+    await tester.getByLabel("Prezime").fill("Testerović");
+    await tester.getByLabel("Email adresa").fill("tester@e2e.test");
+    await tester.getByLabel("Lozinka", { exact: true }).fill(PASSWORD);
+    await tester.getByLabel("Ponovite lozinku").fill(PASSWORD);
+    await tester.screenshot({ path: "docs/screens/prijava-testera-telefon.png" });
+    await tester.getByRole("button", { name: "Pošalji zahtev" }).click();
+    await tester.getByText("Zahtev je poslat").waitFor();
+    await login(tester, "tester@e2e.test");
+    await tester.waitForURL(/\/bez-pristupa/);
+    await tester.getByText("Zahtev čeka odobrenje").waitFor();
+    await tester.goto(`${BASE}/klijenti`);
+    await tester.waitForURL(/\/bez-pristupa/);
+
+    await page.goto(BASE);
+    await page.getByText("Jedan zahtev za pristup čeka odobrenje").waitFor();
+    await page.getByRole("link", { name: "Pregledaj zahteve" }).click();
+    const request = page.locator("li", { hasText: "tester@e2e.test" });
+    await request.getByLabel("Izmena").uncheck();
+    await page.screenshot({ path: "docs/screens/zahtevi-za-pristup.png" });
+    await request.getByRole("button", { name: "Odobri" }).click();
+    await page.getByText("Pristup je odobren: Tea Testerović.").waitFor();
+    await page.getByRole("row", { name: /Tea Testerović/ }).waitFor();
+
+    await tester.goto(BASE);
+    await tester.getByRole("heading", { name: "Početna" }).waitFor();
+    await tester.goto(alfaClientUrl);
+    await tester.getByRole("heading", { name: "E2E Mlin d.o.o." }).waitFor();
+    assert.equal(await tester.getByRole("link", { name: "Izmeni" }).count(), 0);
+    await testerContext.close();
+
+    await page.goto(`${BASE}/administracija`);
+    await page.getByRole("button", { name: "Isključi link za prijavu" }).click();
+    await page.getByRole("button", { name: "Uključi link za prijavu" }).waitFor();
+    const closed = await (await browser.newContext()).newPage();
+    await closed.goto(signupLink);
+    await closed.getByText("Link nije važeći").waitFor();
+    await closed.context().close();
+    ok("tester se prijavljuje preko linka, čeka odobrenje, dobija dodeljenu ulogu; isključen link ne važi");
+
     // --- Izolacija: druga organizacija
     const betaContext = await browser.newContext({ viewport: { width: 1360, height: 900 } });
     const beta = await betaContext.newPage();

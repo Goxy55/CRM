@@ -46,7 +46,8 @@ export async function listMembers(ctx: TenantCtx): Promise<Member[]> {
               m.can_view AS "canView", m.can_create AS "canCreate", m.can_edit AS "canEdit", m.can_export AS "canExport",
               m.can_view_sensitive AS "canViewSensitive", m.created_at AS "createdAt", p.last_login_at AS "lastLoginAt"
        FROM tenant_memberships m JOIN profiles p ON p.user_id = m.user_id
-       WHERE m.tenant_id = $1 ORDER BY m.status, lower(p.last_name), lower(p.first_name)`,
+       WHERE m.tenant_id = $1 AND m.status <> 'pending'
+       ORDER BY m.status, lower(p.last_name), lower(p.first_name)`,
       [ctx.tenantId],
     );
     return r.rows;
@@ -112,11 +113,13 @@ export async function inviteUser(ctx: TenantCtx, raw: unknown): Promise<InviteRe
   if (!parsed.success) throw invalid("Proverite označena polja.", z.flattenError(parsed.error).fieldErrors);
   const input = parsed.data;
   return tenantDb(ctx, async (db) => {
-    const member = await db.query(
-      `SELECT 1 FROM tenant_memberships m JOIN profiles p ON p.user_id = m.user_id
+    const member = await db.query<{ status: string }>(
+      `SELECT m.status FROM tenant_memberships m JOIN profiles p ON p.user_id = m.user_id
        WHERE m.tenant_id = $1 AND lower(p.email) = $2`,
       [ctx.tenantId, input.email.toLowerCase()],
     );
+    if (member.rows[0]?.status === "pending")
+      throw conflict("Ova osoba je već zatražila pristup. Odobrite zahtev u listi zahteva za pristup.");
     if (member.rows.length) throw conflict("Korisnik sa ovom email adresom je već član organizacije.");
     const result = await createInvitation(db, { id: ctx.tenantId, name: ctx.tenantName }, ctx.userId, input);
     await audit(db, ctx, {
@@ -156,7 +159,7 @@ export async function updateMember(ctx: TenantCtx, userId: string, raw: unknown)
               m.can_edit AS "canEdit", m.can_export AS "canExport", m.can_view_sensitive AS "canViewSensitive",
               p.first_name AS "firstName", p.last_name AS "lastName"
        FROM tenant_memberships m JOIN profiles p ON p.user_id = m.user_id
-       WHERE m.tenant_id = $1 FOR UPDATE OF m`,
+       WHERE m.tenant_id = $1 AND m.status <> 'pending' FOR UPDATE OF m`,
       [ctx.tenantId],
     );
     const before = rows.rows.find((m) => m.userId === userId);

@@ -12,14 +12,25 @@ Daje jedan HTTPS link na kojem testeri koriste CRM. Render nalog treba samo vlas
 2. Pregledajte servis `crm-test` i bazu `crm-test-db`, pa potvrdite. Tajna za sesije i ključevi za JMBG se generišu sami.
 3. Sačekajte status **Live**. Migracije baze se primenjuju automatski pre svakog starta.
 4. Otvorite dodeljenu adresu `https://…onrender.com/api/healthz`; treba da vrati `{"status":"ok"}`.
-5. Napravite administratora platforme. U web servisu otvorite **Shell** i unesite (sa svojim podacima; lozinka najmanje 12 znakova):
+5. Napravite administratora platforme. U web servisu otvorite **Shell** i unesite komandu sa svojim podacima (lozinka najmanje 12 znakova). **Stvarne podatke unosite samo u Shell, nikada u ovaj fajl ili drugde u repozitorijum** — repozitorijum je javan:
 
    ```bash
-   ADMIN_EMAIL=goran.milinkovic@gmail.com ADMIN_PASSWORD='Nektarija310724' ADMIN_FIRST_NAME=Goran ADMIN_LAST_NAME=Milinkovic npm run platform-admin
+   ADMIN_EMAIL=vi@example.com ADMIN_PASSWORD='vasa-lozinka' ADMIN_FIRST_NAME=Ime ADMIN_LAST_NAME=Prezime npm run platform-admin
    ```
 
 6. Prijavite se na dodeljenoj adresi. Na strani **Platforma** kreirajte organizaciju i unesite podatke njenog administratora.
 7. Bez SMTP-a pozivnica se ne šalje emailom: link se prikaže na ekranu i prosleđujete ga sami. Administrator organizacije na tom linku postavlja lozinku.
+
+## Testeri: prijava preko linka
+
+Umesto pojedinačnih pozivnica, testeri mogu sami da se prijave:
+
+1. U **Administracija → Korisnici** kliknite **Uključi link za prijavu** i pošaljite link testerima.
+2. Tester na linku unese ime, prezime, email i lozinku. Nalog nastaje, ali bez pristupa podacima.
+3. Na početnoj strani videćete obaveštenje o novim zahtevima. U **Administracija → Korisnici** za svaki zahtev izaberite ulogu i dozvole, pa **Odobri** ili **Odbij**.
+4. Posle odobrenja tester se prijavljuje svojim emailom i lozinkom.
+
+Adresa testera nije potvrđena emailom, pa odobravajte samo osobe koje poznajete. Kada testiranje završi, link isključite; **Novi link** odmah poništava prethodni.
 
 ## Posle objave
 

@@ -5,7 +5,7 @@ Univerzalna CRM veb-aplikacija za više nezavisnih organizacija (multi-tenant): 
 ## Šta aplikacija radi
 
 - **Organizacije** — jedna instalacija, više organizacija; podaci su izolovani u bazi (Row Level Security) i u aplikaciji.
-- **Korisnici** — prijava, odjava, promena i reset lozinke, pozivnice, deaktivacija, uloge (administrator platforme, administrator organizacije, korisnik) i dozvole: pregled, unos, izmena, izvoz, osetljivi podaci.
+- **Korisnici** — prijava, odjava, promena i reset lozinke, pozivnice, samostalna prijava preko linka organizacije uz odobrenje administratora, deaktivacija, uloge (administrator platforme, administrator organizacije, korisnik) i dozvole: pregled, unos, izmena, izvoz, osetljivi podaci.
 - **Klijenti** — fizičko lice, poljoprivredno gazdinstvo, preduzetnik, privredno društvo; više vrsta proizvodnje po klijentu; veza gazdinstva/radnje sa fizičkim licem; statusi; kontrola duplikata; šifrovan JMBG.
 - **Saradnje** — neograničen broj po klijentu, vezane za uslugu iz kataloga organizacije, sa statusom i ugovorenom vrednošću.
 - **Katalog usluga i šifarnici** — uređuje ih administrator organizacije; stavke se deaktiviraju, ne brišu.
@@ -61,8 +61,8 @@ Unosi dve organizacije sa izmišljenim klijentima i ispisuje naloge. Skripta odb
 | Komanda | Šta proverava |
 | --- | --- |
 | `npm run typecheck` | tipove |
-| `npm test` | 56 integracionih testova servisa nad pravim PostgreSQL-om (`TEST_DATABASE_URL`), uključujući izolaciju dve organizacije |
-| `npm run build && npm run test:e2e` | 18 provera u pregledaču nad produkcionim build-om (`E2E_DATABASE_URL`), uključujući telefon |
+| `npm test` | 65 integracionih testova servisa nad pravim PostgreSQL-om (`TEST_DATABASE_URL`), uključujući izolaciju dve organizacije |
+| `npm run build && npm run test:e2e` | 19 provera u pregledaču nad produkcionim build-om (`E2E_DATABASE_URL`), uključujući telefon |
 
 Obe baze za testove se pri svakom pokretanju **brišu i prave iznova** — nikada ne usmeravajte ove promenljive na bazu sa stvarnim podacima.
 

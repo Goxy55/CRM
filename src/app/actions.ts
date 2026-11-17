@@ -10,6 +10,7 @@ import { createCollaboration, setCollaborationStatus, updateCollaboration } from
 import { commitImport, parseImportFile, previewImport, suggestMapping, type ImportMapping } from "@/server/services/import";
 import { createTenant, inviteTenantAdmin, setLogo, setTenantStatus, updateOrganization } from "@/server/services/tenants";
 import { acceptInvitation, inviteUser, revokeInvitation, updateMember } from "@/server/services/users";
+import { approveAccessRequest, rejectAccessRequest, requestAccess, setSignupLink } from "@/server/services/signup";
 import { loadTenantCtx } from "@/server/context";
 import { getSessionUser, platformAction, publicAction, tenantAction, TENANT_COOKIE } from "@/server/session";
 
@@ -151,6 +152,29 @@ export const inviteTenantAdminAction = async (tenantId: string, values: unknown)
     const result = await inviteTenantAdmin(userId, tenantId, values);
     refresh();
     return { link: result.link, mailed: result.mailed };
+  });
+
+export const requestAccessAction = async (token: string, values: unknown) =>
+  publicAction(() => requestAccess(token, values));
+
+export const setSignupLinkAction = async (mode: "enable" | "regenerate" | "disable") =>
+  tenantAction(async (ctx) => {
+    if (!["enable", "regenerate", "disable"].includes(mode)) throw invalid("Nepoznata radnja.");
+    const link = await setSignupLink(ctx, mode);
+    refresh();
+    return link;
+  });
+
+export const approveAccessRequestAction = async (userId: string, grant: unknown) =>
+  tenantAction(async (ctx) => {
+    await approveAccessRequest(ctx, userId, grant);
+    refresh();
+  });
+
+export const rejectAccessRequestAction = async (userId: string) =>
+  tenantAction(async (ctx) => {
+    await rejectAccessRequest(ctx, userId);
+    refresh();
   });
 
 export const acceptInvitationAction = async (token: string, password?: string) =>

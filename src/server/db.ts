@@ -53,6 +53,7 @@ export type DbContext = {
   userId?: string | null;
   platform?: boolean;
   inviteHash?: string | null;
+  signupToken?: string | null;
 };
 
 /**
@@ -79,8 +80,15 @@ export async function withContext<T>(context: DbContext, fn: (db: Db) => Promise
 export async function setContext(db: Db, context: DbContext) {
   await db.query(
     `SELECT set_config('app.tenant_id', $1, true), set_config('app.user_id', $2, true),
-            set_config('app.platform', $3, true), set_config('app.invite_hash', $4, true)`,
-    [context.tenantId ?? "", context.userId ?? "", context.platform ? "on" : "", context.inviteHash ?? ""],
+            set_config('app.platform', $3, true), set_config('app.invite_hash', $4, true),
+            set_config('app.signup_token', $5, true)`,
+    [
+      context.tenantId ?? "",
+      context.userId ?? "",
+      context.platform ? "on" : "",
+      context.inviteHash ?? "",
+      context.signupToken ?? "",
+    ],
   );
 }
 

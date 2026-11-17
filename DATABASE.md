@@ -7,6 +7,7 @@ PostgreSQL 14+. Šema je u `migrations/`, primenjuje se sa `npm run migrate` (ta
 | `001_auth.sql` | tabele biblioteke Better Auth i `login_attempts` |
 | `002_core.sql` | poslovni model, indeksi, okidači |
 | `003_rls.sql` | funkcije konteksta i RLS pravila |
+| `004_access_requests.sql` | link za prijavu (`tenant_settings.signup_token`), status članstva `pending`, pravila za zahteve |
 
 ## Tabele
 
@@ -19,6 +20,7 @@ PostgreSQL 14+. Šema je u `migrations/`, primenjuje se sa `npm run migrate` (ta
 - `tenants`, `tenant_settings` — organizacija, valuta, logo.
 - `tenant_memberships` — članstvo korisnika u organizaciji: uloga, status, dozvole. Jedan korisnik može biti član više organizacija.
 - `invitations` — pozivnice (čuva se samo otisak tokena).
+- Zahtev za pristup je red u `tenant_memberships` sa statusom `pending` i bez dozvola; odobrenjem postaje `active`, a odbijanjem se briše. Link za prijavu je `tenant_settings.signup_token`.
 
 **Podaci organizacije** (sve imaju `tenant_id`)
 
@@ -51,6 +53,7 @@ RLS je uključen i **forsiran** (`FORCE ROW LEVEL SECURITY`) na svim tabelama or
 | `app.user_id` | prijavljeni korisnik |
 | `app.platform` | radnja administratora platforme |
 | `app.invite_hash` | otisak tokena pozivnice koja se prihvata |
+| `app.signup_token` | link za prijavu; otvara samo naziv te organizacije |
 
 Bez konteksta upit ne vidi nijedan red. Poslovne tabele imaju jedno pravilo: `tenant_id = app_tenant_id()`. Superuser i nalozi sa `BYPASSRLS` zaobilaze RLS, pa aplikacija sa takvim nalogom odbija da radi.
 

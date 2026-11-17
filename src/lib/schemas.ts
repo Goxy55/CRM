@@ -195,6 +195,20 @@ export const memberUpdateSchema = inviteFormSchema
   .extend({ status: z.enum(["active", "inactive"]) });
 export type MemberUpdate = z.infer<typeof memberUpdateSchema>;
 
+export const signupFormSchema = z.object({
+  firstName: text(80).min(1, "Unesite ime."),
+  lastName: text(80).min(1, "Unesite prezime."),
+  email: z.email("Neispravna email adresa.").max(200),
+  password: z
+    .string()
+    .min(12, "Lozinka mora imati najmanje 12 znakova.")
+    .max(128, "Lozinka može imati najviše 128 znakova."),
+});
+export type SignupInput = z.infer<typeof signupFormSchema>;
+
+/** Uloga i dozvole koje administrator dodeljuje pri odobravanju zahteva. */
+export const accessGrantSchema = inviteFormSchema.omit({ email: true, firstName: true, lastName: true });
+
 export const passwordSchema = z
   .string()
   .min(12, "Lozinka mora imati najmanje 12 znakova.")

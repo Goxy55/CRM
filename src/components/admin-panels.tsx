@@ -1,8 +1,11 @@
 "use client";
 import { useState } from "react";
 import {
-  inviteUserAction, revokeInvitationAction, saveLookupAction, saveServiceAction, setServiceActiveAction, updateMemberAction,
+  approveAccessRequestAction, inviteUserAction, rejectAccessRequestAction, revokeInvitationAction, saveLookupAction,
+  saveServiceAction, setServiceActiveAction, setSignupLinkAction, updateMemberAction,
 } from "@/app/actions";
+import type { AccessRequest } from "@/server/services/signup";
+import { toast } from "./toast";
 import { formatDateTime } from "@/lib/format";
 import type { LookupKind, ServiceRow } from "@/server/services/catalog";
 import type { Option } from "@/server/services/lookups";
@@ -58,6 +61,87 @@ export function InviteLink({ link, mailed }: { link: string; mailed: boolean }) 
       <p className="mt-1 font-mono text-xs break-all select-all">{link}</p>
       <p className="mt-1 text-xs">Link važi 7 dana i može se iskoristiti jednom.</p>
     </Alert>
+  );
+}
+
+/** Link za samostalnu prijavu i zahtevi koji čekaju odobrenje. */
+export function AccessRequestsPanel({ requests, signupLink }: { requests: AccessRequest[]; signupLink: string | null }) {
+  const { pending, run } = useAction();
+  const [grants, setGrants] = useState<Record<string, Access>>({});
+  const grantFor = (id: string) => grants[id] ?? DEFAULT_ACCESS;
+  return (
+    <div className="space-y-4">
+      {requests.length > 0 && (
+        <Card>
+          <CardHeader title={`Zahtevi za pristup (${requests.length})`} description="Osobe koje su se prijavile preko linka. Do odobrenja nemaju pristup nijednom podatku." />
+          <ul className="divide-y divide-slate-200">
+            {requests.map((r) => (
+              <li key={r.userId} className="space-y-3 p-4">
+                <div>
+                  <p className="font-medium">{r.firstName} {r.lastName}</p>
+                  <p className="text-sm text-slate-600">{r.email} · zahtev poslat {formatDateTime(r.requestedAt)}</p>
+                </div>
+                <AccessFields idPrefix={`req-${r.userId}`} value={grantFor(r.userId)} onChange={(next) => setGrants({ ...grants, [r.userId]: next })} />
+                <div className="flex flex-wrap gap-2">
+                  <Button disabled={pending} onClick={() => run(() => approveAccessRequestAction(r.userId, grantFor(r.userId)), `Pristup je odobren: ${r.firstName} ${r.lastName}.`)}>
+                    Odobri
+                  </Button>
+                  <Button
+                    variant="danger"
+                    disabled={pending}
+                    onClick={() => {
+                      if (window.confirm(`Odbiti zahtev: ${r.firstName} ${r.lastName}?`)) run(() => rejectAccessRequestAction(r.userId), "Zahtev je odbijen.");
+                    }}
+                  >
+                    Odbij
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+      <Card>
+        <CardHeader
+          title="Link za prijavu"
+          description="Ko ima ovaj link može da napravi nalog i zatraži pristup vašoj organizaciji. Pristup dobija tek kada ga odobrite."
+        />
+        <div className="space-y-3 p-4">
+          {signupLink ? (
+            <>
+              <p className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-xs break-all select-all">{signupLink}</p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="secondary"
+                  onClick={() => navigator.clipboard?.writeText(signupLink).then(() => toast("Link je kopiran."), () => toast("Kopirajte link ručno.", "error"))}
+                >
+                  Kopiraj link
+                </Button>
+                <Button
+                  variant="secondary"
+                  disabled={pending}
+                  onClick={() => {
+                    if (window.confirm("Napraviti novi link? Prethodni link odmah prestaje da važi.")) run(() => setSignupLinkAction("regenerate"), "Napravljen je novi link.");
+                  }}
+                >
+                  Novi link
+                </Button>
+                <Button variant="danger" disabled={pending} onClick={() => run(() => setSignupLinkAction("disable"), "Link za prijavu je isključen.")}>
+                  Isključi link za prijavu
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="text-sm text-slate-600">Link je isključen. Novi korisnici mogu da dobiju pristup samo pozivnicom.</p>
+              <Button disabled={pending} onClick={() => run(() => setSignupLinkAction("enable"), "Link za prijavu je uključen.")}>
+                Uključi link za prijavu
+              </Button>
+            </>
+          )}
+        </div>
+      </Card>
+    </div>
   );
 }
 
