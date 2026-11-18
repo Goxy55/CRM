@@ -50,14 +50,7 @@ function create() {
         if (ctx.path !== "/sign-in/email") return;
         const email = String(ctx.body?.email ?? "").trim().toLowerCase();
         if (!email) return;
-        const r = await pool().query(
-          `SELECT count(*)::int AS failures FROM login_attempts
-           WHERE email = $1 AND NOT succeeded AND created_at > now() - make_interval(mins => $2)
-             AND created_at > coalesce((SELECT max(created_at) FROM login_attempts
-                                        WHERE email = $1 AND succeeded), '-infinity')`,
-          [email, LOCK_WINDOW_MINUTES],
-        );
-        if (r.rows[0].failures >= LOCK_MAX_FAILURES)
+        if (await isLockedOut(email))
           throw new APIError("TOO_MANY_REQUESTS", {
             message: "Previše neuspelih pokušaja. Pokušajte ponovo za 15 minuta.",
           });
@@ -66,9 +59,7 @@ function create() {
         if (ctx.path !== "/sign-in/email") return;
         const email = String(ctx.body?.email ?? "").trim().toLowerCase();
         if (!email) return;
-        const succeeded = !!ctx.context.newSession;
-        await pool().query("INSERT INTO login_attempts (email, succeeded) VALUES ($1, $2)", [email, succeeded]);
-        await pool().query("DELETE FROM login_attempts WHERE created_at < now() - interval '30 days'");
+        await recordLoginAttempt(email, !!ctx.context.newSession);
       }),
     },
     databaseHooks: {
@@ -83,6 +74,35 @@ function create() {
       },
     },
   });
+}
+
+/** Zaključavanje po nalogu: previše neuspelih pokušaja od poslednje uspešne prijave. */
+export async function isLockedOut(email: string): Promise<boolean> {
+  const r = await pool().query<{ failures: number }>(
+    `SELECT count(*)::int AS failures FROM login_attempts
+     WHERE email = $1 AND NOT succeeded AND created_at > now() - make_interval(mins => $2)
+       AND created_at > coalesce((SELECT max(created_at) FROM login_attempts
+                                  WHERE email = $1 AND succeeded), '-infinity')`,
+    [email.toLowerCase(), LOCK_WINDOW_MINUTES],
+  );
+  return r.rows[0].failures >= LOCK_MAX_FAILURES;
+}
+
+export async function recordLoginAttempt(email: string, succeeded: boolean) {
+  await pool().query("INSERT INTO login_attempts (email, succeeded) VALUES ($1, $2)", [email.toLowerCase(), succeeded]);
+  await pool().query("DELETE FROM login_attempts WHERE created_at < now() - interval '30 days'");
+}
+
+/** Provera lozinke postojećeg naloga (bez otvaranja sesije). */
+export async function verifyUserPassword(userId: string, password: string): Promise<boolean> {
+  const r = await pool().query<{ password: string | null }>(
+    `SELECT password FROM account WHERE "userId" = $1 AND "providerId" = 'credential'`,
+    [userId],
+  );
+  const hash = r.rows[0]?.password;
+  if (!hash) return false;
+  const ctx = await getAuth().$context;
+  return ctx.password.verify({ hash, password });
 }
 
 type Auth = ReturnType<typeof create>;

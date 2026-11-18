@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { LookupPanel, ServicesPanel, UsersPanel } from "@/components/admin-panels";
+import { AccessRequestsPanel, LookupPanel, ServicesPanel, UsersPanel } from "@/components/admin-panels";
 import { Card, CardHeader, EmptyState, PageHeader, Pagination, Tabs, TableWrap, Td, Th } from "@/components/ui";
 import { formatDateTime } from "@/lib/format";
 import { requireAdmin } from "@/server/context";
@@ -7,6 +7,7 @@ import { load, one, type SearchParams } from "@/server/page";
 import { listServices } from "@/server/services/catalog";
 import { listAudit } from "@/server/services/dashboard";
 import { getLookups } from "@/server/services/lookups";
+import { getSignupLink, listAccessRequests } from "@/server/services/signup";
 import { listInvitations, listMembers } from "@/server/services/users";
 import { requireSession } from "@/server/session";
 
@@ -19,19 +20,25 @@ export default async function AdminPage({ searchParams }: { searchParams: Search
   const sp = await searchParams;
   const tab = (TABS as readonly string[]).includes(one(sp.tab)) ? one(sp.tab) : "korisnici";
   const page = Number(one(sp.page)) || 1;
+  const requests = await listAccessRequests(ctx);
   return (
     <>
       <PageHeader title="Administracija" description={ctx.tenantName} />
       <Tabs
         active={tab}
         tabs={[
-          { key: "korisnici", label: "Korisnici", href: "/administracija" },
+          { key: "korisnici", label: requests.length ? `Korisnici (${requests.length})` : "Korisnici", href: "/administracija" },
           { key: "usluge", label: "Katalog usluga", href: "/administracija?tab=usluge" },
           { key: "sifarnici", label: "Šifarnici", href: "/administracija?tab=sifarnici" },
           { key: "aktivnosti", label: "Evidencija aktivnosti", href: "/administracija?tab=aktivnosti" },
         ]}
       />
-      {tab === "korisnici" && <UsersPanel members={await listMembers(ctx)} invitations={await listInvitations(ctx)} currentUserId={ctx.userId} />}
+      {tab === "korisnici" && (
+        <div className="space-y-4">
+          <AccessRequestsPanel requests={requests} signupLink={await getSignupLink(ctx)} />
+          <UsersPanel members={await listMembers(ctx)} invitations={await listInvitations(ctx)} currentUserId={ctx.userId} />
+        </div>
+      )}
       {tab === "usluge" && <ServicesPanel services={await listServices(ctx)} />}
       {tab === "sifarnici" && <Lookups ctx={ctx} />}
       {tab === "aktivnosti" && <Audit ctx={ctx} page={page} />}

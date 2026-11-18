@@ -1,7 +1,7 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
-import { acceptInvitationAction } from "@/app/actions";
+import { acceptInvitationAction, requestAccessAction } from "@/app/actions";
 import { Alert, Button, Field, Input } from "./ui";
 
 async function post(path: string, body: unknown): Promise<{ status: number; message?: string }> {
@@ -189,6 +189,76 @@ export function AcceptInvitationForm({ token, email, hasAccount }: { token: stri
       <Button type="submit" disabled={busy} className="w-full">
         {busy ? "Aktivacija…" : hasAccount ? "Prihvati pozivnicu" : "Aktiviraj nalog"}
       </Button>
+    </form>
+  );
+}
+
+/** Samostalna prijava preko linka organizacije; nalog čeka odobrenje administratora. */
+export function SignupForm({ token, tenantName }: { token: string; tenantName: string }) {
+  const [error, setError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState("");
+  async function submit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const data = new FormData(e.currentTarget);
+    const values = {
+      firstName: String(data.get("firstName") ?? "").trim(),
+      lastName: String(data.get("lastName") ?? "").trim(),
+      email: String(data.get("email") ?? "").trim(),
+      password: String(data.get("password") ?? ""),
+    };
+    setFieldErrors({});
+    if (values.password.length >= 12 && values.password !== data.get("confirm"))
+      return setError("Lozinke se ne podudaraju.");
+    setBusy(true);
+    setError("");
+    const result = await requestAccessAction(token, values).catch(() => null);
+    setBusy(false);
+    if (!result) return setError(NETWORK);
+    if (result.ok) return setDone(values.email);
+    setFieldErrors(result.fieldErrors ?? {});
+    setError(result.error);
+  }
+  if (done)
+    return (
+      <div className="space-y-4">
+        <Alert tone="success" title="Zahtev je poslat">
+          Administrator organizacije „{tenantName}“ će pregledati vaš zahtev. Kada ga odobri, prijavite se adresom {done} i lozinkom koju ste upravo uneli.
+        </Alert>
+        <Link href={`/prijava?email=${encodeURIComponent(done)}`} className="block text-center text-sm text-brand-700 hover:underline">
+          Na prijavu
+        </Link>
+      </div>
+    );
+  const err = (name: string) => fieldErrors[name]?.[0];
+  return (
+    <form onSubmit={submit} className="space-y-4" noValidate>
+      {error && <Alert tone="error">{error}</Alert>}
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Ime" htmlFor="firstName" error={err("firstName")}>
+          <Input id="firstName" name="firstName" autoComplete="given-name" required />
+        </Field>
+        <Field label="Prezime" htmlFor="lastName" error={err("lastName")}>
+          <Input id="lastName" name="lastName" autoComplete="family-name" required />
+        </Field>
+      </div>
+      <Field label="Email adresa" htmlFor="email" error={err("email")}>
+        <Input id="email" name="email" type="email" autoComplete="username" required />
+      </Field>
+      <Field label="Lozinka" htmlFor="password" hint="Najmanje 12 znakova." error={err("password")}>
+        <Input id="password" name="password" type="password" autoComplete="new-password" minLength={12} required />
+      </Field>
+      <Field label="Ponovite lozinku" htmlFor="confirm">
+        <Input id="confirm" name="confirm" type="password" autoComplete="new-password" minLength={12} required />
+      </Field>
+      <Button type="submit" disabled={busy} className="w-full">
+        {busy ? "Slanje…" : "Pošalji zahtev"}
+      </Button>
+      <p className="text-center text-sm text-slate-600">
+        Već imate nalog?{" "}
+        <Link href="/prijava" className="text-brand-700 hover:underline">Prijavite se</Link>
+      </p>
     </form>
   );
 }

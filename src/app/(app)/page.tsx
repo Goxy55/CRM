@@ -3,6 +3,7 @@ import { DataTable, type Column } from "@/components/data-table";
 import { Alert, Button, Card, CardHeader, EmptyState, Input, LinkButton, PageHeader } from "@/components/ui";
 import { one, type SearchParams } from "@/server/page";
 import { getDashboard } from "@/server/services/dashboard";
+import { countAccessRequests } from "@/server/services/signup";
 import { requireSession } from "@/server/session";
 
 export const metadata = { title: "Početna" };
@@ -27,6 +28,7 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
       </>
     );
   const { kpis, recent } = await getDashboard(ctx);
+  const requests = await countAccessRequests(ctx);
   const cards = [
     { label: "Ukupno klijenata", value: kpis.totalClients, hint: "bez arhiviranih" },
     { label: "Aktivni klijenti", value: kpis.activeClients, hint: "status „Aktivan“" },
@@ -37,6 +39,13 @@ export default async function DashboardPage({ searchParams }: { searchParams: Se
     <>
       <PageHeader title="Početna" description={`Dobro došli, ${ctx.userName}.`} />
       {denied && <div className="mb-4"><Alert tone="warning">Nemate dozvolu za traženu stranicu.</Alert></div>}
+      {requests > 0 && (
+        <div className="mb-4">
+          <Alert tone="info" title={requests === 1 ? "Jedan zahtev za pristup čeka odobrenje" : `Zahteva za pristup koji čekaju odobrenje: ${requests}`}>
+            <div className="mt-2"><LinkButton href="/administracija" variant="secondary">Pregledaj zahteve</LinkButton></div>
+          </Alert>
+        </div>
+      )}
 
       <div className="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center">
         <form action="/klijenti" role="search" className="flex flex-1 gap-2">

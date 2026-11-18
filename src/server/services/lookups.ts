@@ -29,7 +29,7 @@ export async function getLookups(ctx: TenantCtx): Promise<Lookups> {
     const members = await db.query<Option>(
       `SELECT m.user_id AS id, p.first_name || ' ' || p.last_name AS name, m.status = 'active' AS active
        FROM tenant_memberships m JOIN profiles p ON p.user_id = m.user_id
-       WHERE m.tenant_id = $1 ORDER BY lower(p.last_name), lower(p.first_name)`,
+       WHERE m.tenant_id = $1 AND m.status <> 'pending' ORDER BY lower(p.last_name), lower(p.first_name)`,
       t,
     );
     const settings = await db.query<{ default_currency: string }>(

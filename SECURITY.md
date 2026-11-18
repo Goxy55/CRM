@@ -11,7 +11,10 @@ RLS ovde štiti od grešaka u kodu (zaboravljen filter, pogrešan ID). Ne štiti
 ## Prijava i sesije
 
 - Better Auth: lozinke heširane (scrypt), najmanje 12 znakova; sesijski kolačić `HttpOnly`, `SameSite=Lax`, `Secure` uz HTTPS; sesija traje 7 dana.
-- Nema otvorene registracije; nalozi nastaju pozivnicom (jednokratna, 7 dana, u bazi samo otisak tokena).
+- Nema otvorene registracije i niko sam ne može da napravi organizaciju. Nalog nastaje na dva načina:
+  - **pozivnicom** (jednokratna, 7 dana, u bazi samo otisak tokena);
+  - **linkom za prijavu organizacije**, koji administrator organizacije uključuje (podrazumevano isključen), menja i isključuje. Nalog napravljen preko linka ima članstvo u statusu „na čekanju“ i **ne vidi nijedan podatak** dok ga administrator ne odobri i ne dodeli ulogu i dozvole. Organizacija se određuje isključivo iz linka; broj zahteva je ograničen (30 na sat, 200 na čekanju po organizaciji). Za postojeći nalog forma traži njegovu lozinku, uz isto zaključavanje kao pri prijavi.
+- Adresa iz zahteva nije potvrđena emailom: pre odobrenja proverite da li osobu poznajete.
 - Zaključavanje naloga posle 8 neuspelih pokušaja u 15 minuta, nezavisno od IP adrese, uz ograničenje broja zahteva po adresi.
 - Reset lozinke: link važi jedan sat, poništava ostale sesije; odgovor ne otkriva da li nalog postoji.
 
